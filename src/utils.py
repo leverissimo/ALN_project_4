@@ -94,15 +94,20 @@ def plot_histogram_seaborn(data, bins=20, title='Histograma', xlabel='Valor', yl
     plt.close()
     print(f"Gráfico salvo em: {filepath}")
 
-def test_norma2_das_colunas(n):
-    for i in range(n):
-        A = generate_gaussian_matrix(1000, 1000)
-        data = norma2_das_colunas(A)
-        # hist, bin_edges = make_Histogram(data, bins=30)
-        title = f"Histograma das Normas 2 das Colunas - Execução {i+1}"
-        # plot_histogram(hist, bin_edges, title=title, xlabel='Norma 2', ylabel='Frequência')
-        plot_histogram_seaborn(data, bins=25, title=title, xlabel='Norma 2',  ylabel='Frequência')
+def test_norma2_das_colunas():
 
+    valores_possiveis_linha =  [1, 100, 1000, 10000]
+    valores_possiveis_coluna =  [1, 100, 1000, 10000]
+    
+    for linha in valores_possiveis_linha:
+        for col in valores_possiveis_coluna:
+    
+            A = generate_gaussian_matrix(linha, col)
+            data = norma2_das_colunas(A)
+            # hist, bin_edges = make_Histogram(data, bins=30)
+            title = f"Normas 2 das Colunas - Matriz {linha}X{col}"
+            # plot_histogram(hist, bin_edges, title=title, xlabel='Norma 2', ylabel='Frequência')
+            plot_histogram_seaborn(data, bins=25, title=title, xlabel='Norma 2',  ylabel='Frequência')
 # =======================================
 # ============ Question 2 ===============
 # =======================================
@@ -118,6 +123,7 @@ def produto_interno(A):
         list: Lista com os produtos internos entre todas as colunas.
     """
     resultados = []
+    
     for i in range(A.shape[1]):
         for j in range(i+1, A.shape[1]):
             inter_prod = np.dot(A[:, i], A[:, j])
