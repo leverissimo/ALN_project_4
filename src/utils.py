@@ -2,6 +2,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+import time
 
 def generate_gaussian_matrix(M: int, N:int)->np.ndarray:
     """Cria uma matriz Gaussiana com as entradas
@@ -215,10 +216,50 @@ def test_produto_interno():
         title = f"Produto Interno das Colunas - Matriz {i}"
         # plot_histogram(hist, bin_edges, title=title, xlabel='Produto Interno', ylabel='Frequência', folder='figures/produto_interno')
         plot_histogram_seaborn(data=resultados, bins =25,xlabel='Produto Interno', title=title, ylabel='Frequência', folder='figures/produto_interno' )
+      
+# =======================================
+# ============= Question 3 ==============
+# =======================================
+
+def distribuicao_do_maximo(A):
+    norm = np.linalg.norm(A, axis=0)
+    X = A / norm
+    B = np.abs(A @ A.T)
+    
+    np.fill_diagonal(B, 0.0)
+    return np.max(B)
+
+def test_distribuicao_do_maximo(n):
+    """Testa a função distribuicao_do_maximo gerando matrizes Gaussianas
+    e plota histogramas dos máximos calculados.
+
+    Para cada execução, a função:
+    1. Gera uma matriz Gaussiana com 100 linhas e 300 colunas.
+    2. Calcula o máximo da distribuição dos produtos internos normalizados.
+    3. Plota e salva o histograma do máximo calculado.
+
+    Args:
+        n (int): Número de execuções do teste.
+    """
+    maximos = np.empty(n, dtype=float)
+    for i in range(n):
+        A = generate_gaussian_matrix(100, 300)
+        maximos[i] = distribuicao_do_maximo(A)
+
+    hist, bin_edges = make_Histogram(maximos, bins=30)
+    title = f"Histograma do Máximo da Distribuição - Execução {n}"
+    plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo')
+    
 
 if __name__ == "__main__":
-    # test_norma2_das_colunas(5)
+    
+    print("Iniciando os testes...")
+    
     test_norma2_das_colunas()
     test_produto_interno()
-    
+    time_start = time.time()
+    test_distribuicao_do_maximo(1000)
+
+    time_end = time.time()
     print("Teste concluído.")
+    print(f"Tempo total de execução: {time_end - time_start:.2f} segundos")
