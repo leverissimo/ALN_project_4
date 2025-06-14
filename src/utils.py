@@ -139,7 +139,7 @@ def test_produto_interno():
     for i in intervalos:
         A = generate_gaussian_matrix(100, i)
         resultados = produto_interno(A)
-        hist, bin_edges = make_Histogram(resultados, bins=100)
+        hist, bin_edges = make_Histogram(resultados, bins=30)
         title = f"Histograma do Produto Interno - Dimensão {i}"
         plot_histogram(hist, bin_edges, title=title, xlabel='Produto Interno', ylabel='Frequência', folder='figures/produto_interno')
 
