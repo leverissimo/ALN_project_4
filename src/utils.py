@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-
+import seaborn as sns
 
 def generate_gaussian_matrix(M: int, N:int)->np.ndarray:
     """Cria uma matriz Gaussiana com as entradas
@@ -71,14 +71,36 @@ def plot_histogram(hist, bin_edges, title='Histograma', xlabel='Valor', ylabel='
     plt.close()
     print(f"Gráfico salvo em: {filepath}")    
 
+
+
+def plot_histogram_seaborn(data, bins=20, title='Histograma', xlabel='Valor', ylabel='Frequência', folder='figures/histograms'):
+    os.makedirs(folder, exist_ok=True)
+
+    filename = title.lower().replace(' ', '_')
+    filepath = os.path.join(folder, f"{filename}.png")
+
+    plt.figure(figsize=(10, 6))
+    # sns.set(style="darkgrid")  # ou "whitegrid", "ticks"...
+    sns.histplot(data, bins=bins, kde=True, stat='density',  color='skyblue', edgecolor='black')
+    sns.kdeplot(data, color="purple", linewidth=2, label="KDE (Densidade)")
+    # sns.kdeplot(data, color="red
+    # ", linewidth=2)
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend() 
+    plt.savefig(filepath)
+    plt.close()
+    print(f"Gráfico salvo em: {filepath}")
+
 def test_norma2_das_colunas(n):
     for i in range(n):
         A = generate_gaussian_matrix(1000, 1000)
         data = norma2_das_colunas(A)
-        hist, bin_edges = make_Histogram(data, bins=30)
+        # hist, bin_edges = make_Histogram(data, bins=30)
         title = f"Histograma das Normas 2 das Colunas - Execução {i+1}"
-        plot_histogram(hist, bin_edges, title=title, xlabel='Norma 2', ylabel='Frequência')
-
+        # plot_histogram(hist, bin_edges, title=title, xlabel='Norma 2', ylabel='Frequência')
+        plot_histogram_seaborn(data, bins=25, title=title, xlabel='Norma 2',  ylabel='Frequência')
 # =======================================
 # ============ Question 2 ===============
 # =======================================
