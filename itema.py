@@ -17,3 +17,12 @@ def generate_gaussian_matrix(M: int, N:int)->np.ndarray:
     matriz = np.random.normal(loc=0, scale = 1, size=(M, N))
     
     return matriz
+
+def norma2_das_colunas(A):
+    A = A.copy()
+    norm = []
+
+    for i in range(A.shape[1]):
+        norm.append(np.linalg.norm(A[:, i]))
+
+    return norm
