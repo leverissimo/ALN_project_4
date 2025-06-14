@@ -73,25 +73,90 @@ def plot_histogram(hist, bin_edges, title='Histograma', xlabel='Valor', ylabel='
 
 
 
-def plot_histogram_seaborn(data, bins=20, title='Histograma', xlabel='Valor', ylabel='Frequência', folder='figures/histograms'):
+def plot_histogram_seaborn(data, bins=20, title='Histograma', xlabel='Valor', ylabel='Frequência', folder='figures/normas'):
     os.makedirs(folder, exist_ok=True)
 
     filename = title.lower().replace(' ', '_')
     filepath = os.path.join(folder, f"{filename}.png")
-
+    mean = np.mean(data)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    
     plt.figure(figsize=(10, 6))
     # sns.set(style="darkgrid")  # ou "whitegrid", "ticks"...
-    sns.histplot(data, bins=bins, kde=True, stat='density',  color='skyblue', edgecolor='black')
-    sns.kdeplot(data, color="purple", linewidth=2, label="KDE (Densidade)")
+    sns.histplot(data, bins=bins, kde=True, stat='density',  color='skyblue', edgecolor='black', ax =ax)
+    sns.kdeplot(data, color="purple", linewidth=2, label="KDE (Densidade)", ax =ax)
+    ax.axvline(mean,        ls='--', lw=2,  color='blue',   label=f'Média: {mean:.2f}')
     # sns.kdeplot(data, color="red
     # ", linewidth=2)
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.legend() 
-    plt.savefig(filepath)
-    plt.close()
+    # Títulos e eixos
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+
+    # Agora o Matplotlib encontra todos os rótulos
+    ax.legend()
+
+    fig.savefig(filepath, bbox_inches='tight')
+    plt.close(fig)
     print(f"Gráfico salvo em: {filepath}")
+
+
+
+
+
+# def plot_histogram_seaborn(data, *, bins=20, title='Histograma',
+#                            xlabel='Valor', ylabel='Frequência',
+#                            folder='figures/normas'):
+#     os.makedirs(folder, exist_ok=True)
+
+#     filename = title.lower().replace(' ', '_')
+#     filepath = os.path.join(folder, f"{filename}.png")
+
+#     # --- Crie UMA figura e UM eixo ----------------------------
+#     fig, ax = plt.subplots(figsize=(10, 6))
+#     sns.set_style("darkgrid")
+
+#     # Histograma (stat='density' p/ ficar na mesma escala da KDE)
+#     sns.histplot(
+#         data,
+#         bins=bins,
+#         stat='density',
+#         color='skyblue',
+#         edgecolor='black',
+#         label='Histograma',
+#         ax=ax                       # <- mesmo eixo
+#     )
+
+#     # KDE sobre o mesmo eixo, com rótulo
+#     sns.kdeplot(
+#         data,
+#         color='purple',
+#         linewidth=2,
+#         label='KDE (Densidade)',
+#         ax=ax                       # <- mesmo eixo
+#     )
+
+#     # Linhas de média ± desvio‑padrão (opcional)
+#     mean = np.mean(data)
+#     std  = np.std(data)
+#     ax.axvline(mean,        ls='--', lw=2,  color='blue',   label=f'Média: {mean:.2f}')
+#     ax.axvline(mean - std,  ls='--', lw=1.5,color='green',  label=f'-1σ: {mean - std:.2f}')
+#     ax.axvline(mean + std,  ls='--', lw=1.5,color='green',  label=f'+1σ: {mean + std:.2f}')
+#     #  • Se quiser sombrear a área ±1σ:
+#     # ax.axvspan(mean - std, mean + std, color='green', alpha=0.2, label='±1σ')
+
+#     # Títulos e eixos
+#     ax.set_title(title)
+#     ax.set_xlabel(xlabel)
+#     ax.set_ylabel(ylabel)
+
+#     # Agora o Matplotlib encontra todos os rótulos
+#     ax.legend()
+
+#     fig.savefig(filepath, bbox_inches='tight')
+#     plt.close(fig)
+#     print(f"Gráfico salvo em: {filepath}")
 
 def test_norma2_das_colunas():
 
@@ -147,7 +212,7 @@ def test_produto_interno():
         A = generate_gaussian_matrix(100, i)
         resultados = produto_interno(A)
         hist, bin_edges = make_Histogram(resultados, bins=30)
-        title = f"Histograma do Produto Interno - Dimensão {i}"
+        title = f"Produto Interno das Colunas - Matriz {i}"
         # plot_histogram(hist, bin_edges, title=title, xlabel='Produto Interno', ylabel='Frequência', folder='figures/produto_interno')
         plot_histogram_seaborn(data=resultados, bins =25,xlabel='Produto Interno', title=title, ylabel='Frequência', folder='figures/produto_interno' )
 
