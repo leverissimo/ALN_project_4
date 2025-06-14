@@ -2,6 +2,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy import stats
 import time
 
 def generate_gaussian_matrix(M: int, N:int)->np.ndarray:
@@ -22,6 +23,7 @@ def generate_gaussian_matrix(M: int, N:int)->np.ndarray:
     return matriz
 
 
+
 # =======================================
 # ============ Question 1 ===============
 # =======================================
@@ -31,8 +33,33 @@ def norma2_das_colunas(A):
 
     for i in range(A.shape[1]):
         data.append(np.linalg.norm(A[:, i]))
-
     return data
+
+def melhor_ajuste_distribuicao(data):
+    # Distributions to test - focusing on likely candidates
+    distribuicoes = [
+        ('norm', stats.norm),
+        ('chi', stats.chi),
+        ('chi2', stats.chi2),
+        ('rayleigh', stats.rayleigh)
+    ]
+    
+    melhor_p = -1
+    melhor_nome = ''
+    
+    for nome, distrib in distribuicoes:
+        try:
+            params = distrib.fit(data)
+            ks_stat, p_valor = stats.kstest(data, nome, args=params)
+            
+            if p_valor > melhor_p:
+                melhor_p = p_valor
+                melhor_nome = nome
+        except Exception as e:
+            print(f"Erro ao ajustar {nome}: {str(e)}")
+            continue
+            
+    return melhor_nome
 
 def make_Histogram(data, bins=20):
     """Cria um histograma a partir dos dados fornecidos.
@@ -169,6 +196,8 @@ def test_norma2_das_colunas():
     
             A = generate_gaussian_matrix(linha, col)
             data = norma2_das_colunas(A)
+            melhor_ajuste = melhor_ajuste_distribuicao(data)
+            print(f"Melhor Ajuste (Distibuição na Matriz {linha}X{col}: {melhor_ajuste} )")
             # hist, bin_edges = make_Histogram(data, bins=30)
             title = f"Normas 2 das Colunas - Matriz {linha}X{col}"
             # plot_histogram(hist, bin_edges, title=title, xlabel='Norma 2', ylabel='Frequência')
@@ -247,9 +276,9 @@ def test_distribuicao_do_maximo(n):
         maximos[i] = distribuicao_do_maximo(A)
 
     hist, bin_edges = make_Histogram(maximos, bins=30)
-    title = f"Histograma do Máximo da Distribuição - Execução {n}"
-    plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo')
-    
+    title = f"Distribuição do Máximo de Não-Ortogonalidade entre Colunas (K = {n})"
+    # plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo')
+    plot_histogram_seaborn(data = maximos, title=title, xlabel="Máximo",ylabel='Frequência', folder='figures/distribuicao_do_maximo' )
 
 if __name__ == "__main__":
     
