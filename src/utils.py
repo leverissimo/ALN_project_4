@@ -89,6 +89,8 @@ def plot_histogram_seaborn(data, bins=20, title='Histograma', xlabel='Valor', yl
     print(f"Gráfico salvo em: {filepath}")
 
 def test_norma2_das_colunas(n):
+
+    
     for i in range(n):
         A = generate_gaussian_matrix(1000, 1000)
         data = norma2_das_colunas(A)
