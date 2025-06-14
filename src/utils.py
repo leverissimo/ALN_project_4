@@ -20,6 +20,11 @@ def generate_gaussian_matrix(M: int, N:int)->np.ndarray:
     
     return matriz
 
+
+# =======================================
+# ============ Question 1 ===============
+# =======================================
+
 def norma2_das_colunas(A):
     data = []
 
@@ -88,16 +93,67 @@ def plot_histogram_seaborn(data, bins=20, title='Histograma', xlabel='Valor', yl
     plt.close()
     print(f"Gráfico salvo em: {filepath}")
 
-def test_norma2_das_colunas(n):
+def test_norma2_das_colunas():
 
+    valores_possiveis_linha =  [1, 100, 1000, 10000]
+    valores_possiveis_coluna =  [1, 100, 1000, 10000]
     
-    for i in range(n):
-        A = generate_gaussian_matrix(1000, 1000)
-        data = norma2_das_colunas(A)
-        # hist, bin_edges = make_Histogram(data, bins=30)
-        title = f"Histograma das Normas 2 das Colunas - Execução {i+1}"
-        # plot_histogram(hist, bin_edges, title=title, xlabel='Norma 2', ylabel='Frequência')
-        plot_histogram_seaborn(data, bins=25, title=title, xlabel='Norma 2',  ylabel='Frequência')
+    for linha in valores_possiveis_linha:
+        for col in valores_possiveis_coluna:
+    
+            A = generate_gaussian_matrix(linha, col)
+            data = norma2_das_colunas(A)
+            # hist, bin_edges = make_Histogram(data, bins=30)
+            title = f"Normas 2 das Colunas - Matriz {linha}X{col}"
+            # plot_histogram(hist, bin_edges, title=title, xlabel='Norma 2', ylabel='Frequência')
+            plot_histogram_seaborn(data, bins=25, title=title, xlabel='Norma 2',  ylabel='Frequência')
+# =======================================
+# ============ Question 2 ===============
+# =======================================
+
+
+def produto_interno(A):
+    """Calcula o produto interno entre todas as colunas de uma matriz.
+    
+    Args:
+        A (np.ndarray): Matriz com as colunas a serem calculadas.
+    
+    Returns:
+        list: Lista com os produtos internos entre todas as colunas.
+    """
+    resultados = []
+    
+    for i in range(A.shape[1]):
+        for j in range(i+1, A.shape[1]):
+            inter_prod = np.dot(A[:, i], A[:, j])
+            resultados.append(inter_prod)
+    return resultados
+        
+def test_produto_interno():
+    """
+    Testa a função produto_interno gerando matrizes Gaussianas de diferentes
+    dimensões de coluna e plota histogramas dos produtos internos calculados.
+
+    Para cada dimensão de coluna especificada em 'intervalos', a função:
+    1. Gera uma matriz Gaussiana com 100 linhas e 'i' colunas.
+    2. Calcula o produto interno entre todas as colunas da matriz.
+    3. Cria um histograma dos produtos internos calculados.
+    4. Plota e salva o histograma em um arquivo na pasta 'figures/produto_interno'.
+
+    """
+
+    intervalos = [100, 200, 500, 1000]
+    for i in intervalos:
+        A = generate_gaussian_matrix(100, i)
+        resultados = produto_interno(A)
+        hist, bin_edges = make_Histogram(resultados, bins=30)
+        title = f"Histograma do Produto Interno - Dimensão {i}"
+        # plot_histogram(hist, bin_edges, title=title, xlabel='Produto Interno', ylabel='Frequência', folder='figures/produto_interno')
+        plot_histogram_seaborn(data=resultados, bins =25,xlabel='Produto Interno', title=title, ylabel='Frequência', folder='figures/produto_interno' )
+
 if __name__ == "__main__":
-    test_norma2_das_colunas(5)
+    # test_norma2_das_colunas(5)
+    test_norma2_das_colunas()
+    test_produto_interno()
+    
     print("Teste concluído.")
