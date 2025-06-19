@@ -220,7 +220,7 @@ def test_produto_interno():
 def distribuicao_do_maximo(A):
     norm = np.linalg.norm(A, axis=0)
     X = A / norm
-    B = np.abs(A @ A.T)
+    B = np.abs(X.T @ X)
     
     np.fill_diagonal(B, 0.0)
     return np.max(B)
@@ -243,18 +243,31 @@ def test_distribuicao_do_maximo(n):
         maximos[i] = distribuicao_do_maximo(A)
 
     hist, bin_edges = make_Histogram(maximos, bins=30)
-    title = f"Distribuição do Máximo de Não-Ortogonalidade entre Colunas (K = {n})"
-    # plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo')
-    plot_histogram_seaborn(data = maximos, title=title, xlabel="Máximo",ylabel='Frequência', folder='figures/distribuicao_do_maximo' )
+    title = f"Distribuição do Máximo de não ortoonalidade entre colunas"
+    plot_histogram_seaborn(data=maximos, title= title,  bins=25,  xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo') 
+
+def test_distribuicao_do_maximo_parte_2(n):
+    maximos = np.empty(n, dtype=float)
+    pares_mn = [(100, 100), (100, 300), (200, 200), (200, 600), (500, 500), (500, 1500), (1000, 1000), (1000, 3000)]
+    for p in pares_mn:
+        for i in range(n):
+            A = generate_gaussian_matrix(p[0], p[1])
+            maximos[i] = distribuicao_do_maximo(A)
+
+        hist, bin_edges = make_Histogram(maximos, bins=30)
+        title = f"Histograma do Máximo da Distribuição - Execução {n}, Dimensões {p[0]}X{p[1]}"
+        plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder=f'figures/distribuicao_do_maximo/parte_2/valores_de_K/{n}')
+        maximos = np.empty(n, dtype=float)
+
 
 if __name__ == "__main__":
-    
+    time_start = time.time()
     print("Iniciando os testes...")
     
     # test_norma2_das_colunas()
-    test_produto_interno()
+    # test_produto_interno()
     # time_start = time.time()
-    # test_distribuicao_do_maximo(1000)
+    test_distribuicao_do_maximo(1000)
     
 
     # time_end = time.time()
