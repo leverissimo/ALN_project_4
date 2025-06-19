@@ -276,7 +276,6 @@ def test_distribuicao_do_maximo(n):
         maximos[i] = distribuicao_do_maximo(A)
 
     hist, bin_edges = make_Histogram(maximos, bins=30)
-<<<<<<< HEAD
     title = f"Histograma do Máximo da Distribuição - Execução {n}"
     plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo')
 
@@ -294,28 +293,16 @@ def test_distribuicao_do_maximo_parte_2(n):
         plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder=f'figures/distribuicao_do_maximo/parte_2/valores_de_K/{n}')
         maximos = np.empty(n, dtype=float)
 
-=======
-    title = f"Distribuição do Máximo de Não-Ortogonalidade entre Colunas (K = {n})"
-    # plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo')
-    plot_histogram_seaborn(data = maximos, title=title, xlabel="Máximo",ylabel='Frequência', folder='figures/distribuicao_do_maximo' )
->>>>>>> c212ec271de10b7c371678c9971e9293eb79fbe9
 
 if __name__ == "__main__":
-    
+    time_start = time.time()
     print("Iniciando os testes...")
     
-<<<<<<< HEAD
     # test_norma2_das_colunas(5)
     # test_produto_interno()
     
     # test_distribuicao_do_maximo(1000)
     test_distribuicao_do_maximo_parte_2(1000)
-=======
-    test_norma2_das_colunas()
-    test_produto_interno()
-    time_start = time.time()
-    test_distribuicao_do_maximo(1000)
->>>>>>> c212ec271de10b7c371678c9971e9293eb79fbe9
 
     time_end = time.time()
     print("Teste concluído.")
