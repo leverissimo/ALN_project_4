@@ -313,6 +313,8 @@ def encontrar_K_teorico(m, n, epsilon, alpha, K0=100, max_iter=1000):
     }
 
 def analise_K(m, n, epsilon, alpha, K_max):
+    print(f"Valor do epsilon: {epsilon}")
+    print(f"Valor do alpha: {alpha}")
     #Calcula K teórico e tolerância de erro    
     resultado = encontrar_K_teorico(m, n, epsilon, alpha)
     tol = resultado['ME']
@@ -351,23 +353,37 @@ def analise_K(m, n, epsilon, alpha, K_max):
     # Calcula limites de confiança
     limite_superior = valor_esperado + tol
     limite_inferior = valor_esperado - tol
-
+    
     # Plota os resultados
     plt.figure(figsize=(10, 6))
-    plt.plot(range(1, K_max + 1), medias, label='Média dos Máximos')
-    plt.axvline(K_teo, color='red', linestyle='--', label=f'K = {K_teo}')
-    plt.axvline(K_real, color='green', linestyle='--', label=f'K Real = {K_real}')
-    plt.axhline(limite_superior, color='orange', linestyle='--', 
-                label=f'Limite Superior: {limite_superior:.4f}')
-    plt.axhline(limite_inferior, color='orange', linestyle='--', 
-                label=f'Limite Inferior: {limite_inferior:.4f}')
-    plt.xlabel('K')
-    plt.ylabel('Média dos Máximos')
-    plt.title('Média dos Máximos vs. K')
-    plt.legend()
-    plt.savefig('figures/encontrar_K/media_maximos_vs_K.png')
+    plt.plot(range(1, K_max + 1), medias, label='Média dos Máximos', color='#1f77b4', linewidth=2)
+    # plt.plot([], [], ' ', label=f'Epsilon ($\epsilon$) = {epsilon:.4f}') # Adiciona uma entrada vazia na legenda
+
+
+    plt.axhline(limite_superior, color='darkorange', linestyle='--', linewidth=2,
+            label=f'Limite Superior: {limite_superior:.4f}')    
+    plt.axhline(limite_inferior, color='chocolate', linestyle='-.', linewidth=2,
+            label=f'Limite Inferior: {limite_inferior:.4f}')
+    
+    plt.axvline(K_teo, color='firebrick', linestyle='--', linewidth=2, label=f'K Teórico = {K_teo}')
+    plt.axvline(K_real, color='darkgreen', linestyle='--', linewidth=2, label=f'K Real = {K_real}')
+    # if K_real is not None:
+    #     plt.axvspan(K_real, K_max, color='green', alpha=0.1, label='Região de Convergência Estável')
+
+  
+    plt.xlabel('K (Número de Simulações)', fontsize=14)
+    plt.ylabel('Média dos Máximos', fontsize=14)
+    plt.title(f'Estabilização da Média dos Máximos vs. K (${{\\epsilon}}$ = {epsilon:.4f})', fontsize=16, pad=20)
+    
+    plt.legend( framealpha=0.9, facecolor='white')
+
+    plt.tight_layout()
+    plt.savefig(f'figures/encontrar_K/media_maximos_vs_K_{epsilon:.4f}.png', dpi=300, bbox_inches='tight')
     plt.close()
 
+    
+    print(f"Análise com epsilon = {epsilon} finalizada")
+    print()
     return {
         'k_values': k_values,
         'valor_esperado': valor_esperado,
@@ -376,25 +392,12 @@ def analise_K(m, n, epsilon, alpha, K_max):
         'limite_superior': limite_superior,
         'limite_inferior': limite_inferior
     }
-
+    
 
 # =======================================
 # ============= Question 5 ==============
 # =======================================
-    
-    #  Calculando Média
-    mean = np.mean(maximos)
-    # Calcula Moda 
-    valores, contagens = np.unique(maximos, return_counts=True)
-    moda = valores[np.argmax(contagens)]
-    mediana = np.median(maximos)
 
-    hist, bin_edges = make_Histogram(maximos, bins=30)
-    title = f"Distribuição do Máximo de não ortogonalidade entre colunas"
-    plot_histogram_seaborn(data=maximos, title= title,  bins=25,  xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo') 
-    
-    
-    return mean, moda, mediana
 
 def test_distribuicao_do_maximo_parte_2(n):
     maximos = np.empty(n, dtype=float)
@@ -423,8 +426,12 @@ if __name__ == "__main__":
     # print(f"Valor de K encontrado: {k_value}")
     # result = encontrar_K_teorico(100, 300, epsilon=0.01, alpha=0.05)
     # print(encontrar_K(0.001, 0.05, K_max=1000))
-    result = analise_K(m=100, n=300, epsilon=0.001, alpha=0.05, K_max=3000)
-    print(f"Valor esperado: {result['valor_esperado']:.4f}, K Teórico: {result['K_teo']}, K Real: {result['K_real']}")
+    
+    epsilon_poss =[0.005, 0.004, 0.003, 0.0015] 
+    
+    for eps in epsilon_poss:
+        result = analise_K(m=100, n=300, epsilon=eps, alpha=0.05, K_max=3000)
+        print(f"Valor esperado: {result['valor_esperado']:.4f}, K Teórico: {result['K_teo']}, K Real: {result['K_real']}")
     
     # print(len(k_values), " valores de K encontrados.")
     # test_distribuicao_do_maximo_parte_2(1000)
