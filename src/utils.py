@@ -36,48 +36,23 @@ def generate_gaussian_matrix(M: int, N:int)->np.ndarray:
 # =======================================
 
 def norma2_das_colunas(A):
+    """
+    Calcula a norma Euclidiana  de cada coluna de uma matriz.
+
+    Esta função itera sobre as colunas da matriz de entrada e calcula a norma euclidiana
+    de cada coluna individualmente, retornando uma lista com essas normas.
+
+    Args:
+        A (np.ndarray): A matriz de entrada (bidimensional).
+
+    Returns:
+        list: Uma lista contendo a norma euclidiana de cada coluna da matriz A.
+    """
     data = []
 
     for i in range(A.shape[1]):
         data.append(np.linalg.norm(A[:, i]))
     return data
-
-import scipy.stats as stats
-
-def melhor_ajuste_distribuicao(data):
-    # Lista de distribuições candidatas (incluindo Gama e Beta)
-    distribuicoes = [
-        ('norm', stats.norm),      # Normal (suporte: -inf a +inf)
-        ('chi', stats.chi),        # Chi (suporte: x ≥ 0)
-        ('chi2', stats.chi2),      # Chi-quadrado (suporte: x ≥ 0)
-        ('rayleigh', stats.rayleigh),  # Rayleigh (suporte: x ≥ 0)
-        ('gamma', stats.gamma),    # Gama (suporte: x > 0)
-        ('beta', stats.beta)       # Beta (suporte: 0 ≤ x ≤ 1)
-    ]
-    
-    melhor_p = -1
-    melhor_nome = ''
-    
-    for nome, distrib in distribuicoes:
-        try:
-            # Ajuste especial para a distribuição Beta (requer dados em [0, 1])
-            if nome == 'beta':
-                # Normaliza os dados para o intervalo [0, 1]
-                data_normalized = (data - np.min(data)) / (np.max(data) - np.min(data))
-                params = distrib.fit(data_normalized)
-                ks_stat, p_valor = stats.kstest(data_normalized, nome, args=params)
-            else:
-                params = distrib.fit(data)
-                ks_stat, p_valor = stats.kstest(data, nome, args=params)
-            
-            if p_valor > melhor_p:
-                melhor_p = p_valor
-                melhor_nome = nome
-        except Exception as e:
-            print(f"Erro ao ajustar {nome}: {str(e)}")
-            continue
-            
-    return melhor_nome
 
 def make_Histogram(data, bins=20):
     """Cria um histograma a partir dos dados fornecidos.
@@ -120,6 +95,42 @@ def plot_histogram(hist, bin_edges, title='Histograma', xlabel='Valor', ylabel='
 
 
 def plot_histogram_seaborn(data, bins=20, title='Histograma', xlabel='Valor', ylabel='Frequência', folder='figures/normas'):
+    """
+    Gera e salva um histograma com Estimativa de Densidade de Kernel (KDE) usando Seaborn e Matplotlib.
+
+    Esta função cria um histograma para visualizar a distribuição dos dados fornecidos,
+    sobrepõe uma curva KDE para estimar a função de densidade de probabilidade e
+    adiciona uma linha vertical indicando a média dos dados. O gráfico resultante
+    é salvo em um arquivo PNG no diretório especificado.
+
+    Args:
+        data (array-like): Os dados para os quais o histograma será plotado (e.g., lista, array NumPy).
+        bins (int, optional): O número de bins (barras) do histograma. Padrão para 20.
+        title (str, optional): O título principal do gráfico. A média e o desvio padrão
+                                dos dados serão adicionados automaticamente ao título.
+                                Padrão para 'Histograma'.
+        xlabel (str, optional): O rótulo para o eixo X do gráfico. Padrão para 'Valor'.
+        ylabel (str, optional): O rótulo para o eixo Y do gráfico. Padrão para 'Frequência'.
+        folder (str, optional): O caminho do diretório onde o gráfico será salvo.
+                                 O diretório será criado se não existir.
+                                 Padrão para 'figures/normas'.
+
+    Returns:
+        None: A função salva o gráfico diretamente no sistema de arquivos.
+
+    Notes:
+        - A função calcula automaticamente a média e o desvio padrão dos `data` e os inclui
+          no título e na legenda.
+        - Utiliza `seaborn.histplot` para o histograma e KDE e `matplotlib.pyplot`
+          para personalização e salvamento.
+        - O nome do arquivo PNG é gerado a partir do `title`, convertendo espaços para
+          underscores e letras para minúsculas.
+
+    Raises:
+        ImportError: Se 'os', 'numpy', 'matplotlib.pyplot' ou 'seaborn' não puderem ser importados.
+
+    """
+
     os.makedirs(folder, exist_ok=True)
 
     filename = title.lower().replace(' ', '_')
@@ -130,14 +141,9 @@ def plot_histogram_seaborn(data, bins=20, title='Histograma', xlabel='Valor', yl
     
     
     plt.figure(figsize=(10, 6))
-    # sns.set(style="darkgrid")  # ou "whitegrid", "ticks"...
     sns.histplot(data, bins=bins, kde=True, stat='density',  color='skyblue', edgecolor='black', ax =ax)
     sns.kdeplot(data, color="purple", linewidth=2, label="KDE (Densidade)", ax =ax)
     ax.axvline(mean,        ls='--', lw=2,  color='blue',   label=f'Média: {mean:.2f}')
-    # sns.kdeplot(data, color="red
-    # ", linewidth=2)
-    # Títulos e eixos
-    # ax.set_title(title)
     ax.set_title(f"{title} (σ = {std:.2f})")
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -151,7 +157,25 @@ def plot_histogram_seaborn(data, bins=20, title='Histograma', xlabel='Valor', yl
 
 
 def test_norma2_das_colunas():
+    """
+    Testa e visualiza a distribuição das normas euclidianas  das colunas de matrizes Gaussianas
+    para diferentes dimensões.
 
+    Esta função automatiza a criação de matrizes Gaussianas aleatórias de várias dimensões,
+    calcula a norma euclidiana de cada uma de suas colunas e, em seguida, gera um histograma
+    para visualizar a distribuição dessas normas. É útil para analisar como o
+    comportamento das normas das colunas varia com as dimensões da matriz (linhas e colunas).
+
+    A função testa combinações de linhas e colunas a partir dos seguintes valores:
+    - Linhas (m): [1, 100, 1000, 10000]
+    - Colunas (n): [1, 100, 1000, 10000]
+
+    Para cada par (m, n):
+    1. Gera uma matriz Gaussiana de dimensão m x n.
+    2. Calcula a norma euclidiana de cada coluna da matriz.
+    3. Plota um histograma da distribuição dessas normas, com um título descritivo
+       e rótulos para os eixos.
+    """
     valores_possiveis_linha =  [1, 100, 1000, 10000]
     valores_possiveis_coluna =  [1, 100, 1000, 10000]
     
@@ -160,12 +184,10 @@ def test_norma2_das_colunas():
     
             A = generate_gaussian_matrix(linha, col)
             data = norma2_das_colunas(A)
-            melhor_ajuste = melhor_ajuste_distribuicao(data)
-            print(f"Melhor Ajuste (Distibuição na Matriz {linha}X{col}: {melhor_ajuste} )")
-            # hist, bin_edges = make_Histogram(data, bins=30)
             title = f"Normas 2 das Colunas - Matriz {linha}X{col}"
-            # plot_histogram(hist, bin_edges, title=title, xlabel='Norma 2', ylabel='Frequência')
             plot_histogram_seaborn(data, bins=25, title=title, xlabel='Norma 2',  ylabel='Frequência')
+
+
 # =======================================
 # ============ Question 2 ===============
 # =======================================
@@ -205,11 +227,8 @@ def test_produto_interno():
     for i in intervalos:
         A = generate_gaussian_matrix(100, i)
         resultados = produto_interno(A)
-        melhor_ajuste = melhor_ajuste_distribuicao(resultados)
         hist, bin_edges = make_Histogram(resultados, bins=30)
-        print(f"Melhor ajuste na matriz 100 X {i}: {melhor_ajuste}")
         title = f"Produto Interno das Colunas - Matriz {i}"
-        # plot_histogram(hist, bin_edges, title=title, xlabel='Produto Interno', ylabel='Frequência', folder='figures/produto_interno')
         plot_histogram_seaborn(data=resultados, bins =25,xlabel='Produto Interno', title=title, ylabel='Frequência', folder='figures/produto_interno' )
       
 # =======================================
@@ -217,26 +236,78 @@ def test_produto_interno():
 # =======================================
 
 def distribuicao_do_maximo(A, create_matrix=False, m = None, n = None):
+    """
+    Calcula o valor máximo da "não-ortogonalidade" entre pares de colunas de uma matriz.
+
+    A "não-ortogonalidade" entre duas colunas é definida como o valor absoluto
+    do produto interno normalizado entre elas, que é equivalente ao valor absoluto
+    do cosseno do ângulo entre as colunas. Um valor próximo de 0 indica ortogonalidade
+    e um valor próximo de 1 indica colinearidade.
+
+    Esta função pode operar em uma matriz fornecida ou gerar uma nova matriz Gaussiana
+    com dimensões especificadas. Ela normaliza as colunas da matriz para que tenham
+    norma unitária, calcula a matriz de produtos internos (similar a uma matriz de correlação),
+    zera a diagonal (para ignorar a auto-correlação das colunas consigo mesmas)
+    e, finalmente, retorna o maior valor absoluto de não-ortogonalidade encontrado.
+
+    Args:
+        A (np.ndarray, optional): A matriz de entrada. Se `create_matrix` for True,
+                                  este argumento será ignorado.
+        create_matrix (bool, optional): Se True, uma nova matriz Gaussiana será gerada
+                                        usando `generate_gaussian_matrix` com as dimensões `m` e `n`.
+                                        Padrão para False.
+        m (int, optional): Número de linhas da matriz a ser gerada, se `create_matrix` for True.
+                           Deve ser fornecido se `create_matrix` for True.
+        n (int, optional): Número de colunas da matriz a ser gerada, se `create_matrix` for True.
+                           Deve ser fornecido se `create_matrix` for True.
+
+    Returns:
+        float: O valor máximo da não-ortogonalidade encontrado entre quaisquer pares
+               de colunas distintas da matriz. Este valor estará no intervalo [0, 1].
+
+    Raises:
+        ValueError: Se `create_matrix` for True, mas `m` ou `n` não forem fornecidos.
+        TypeError: Se `A` não for um `np.ndarray` e `create_matrix` for False.
+    """
     if create_matrix:
-        A = generate_gaussian_matrix(m, n)
+        A = generate_gaussian_matrix(m, n) # gera  matriz caso ela ainda nn foi gerada
     norm = np.linalg.norm(A, axis=0)
-    X = A / norm
-    B = np.abs(X.T @ X)
+    X = A / norm # normaliza as colunas
+    B = np.abs(X.T @ X) # produto interno das colunas
     
     np.fill_diagonal(B, 0.0)
     return np.max(B)
 
-def test_distribuicao_do_maximo(n, plot=True):
-    """Testa a função distribuicao_do_maximo gerando matrizes Gaussianas
-    e plota histogramas dos máximos calculados.
 
-    Para cada execução, a função:
-    1. Gera uma matriz Gaussiana com 100 linhas e 300 colunas.
-    2. Calcula o máximo da distribuição dos produtos internos normalizados.
-    3. Plota e salva o histograma do máximo calculado.
+def test_distribuicao_do_maximo(n, plot=True):
+    """
+    Testa a função `distribuicao_do_maximo` gerando múltiplas matrizes Gaussianas
+    e analisando a distribuição dos valores máximos de não-ortogonalidade.
+
+    Esta função executa a simulação `n` vezes. Em cada execução, ela:
+    1. Gera uma nova matriz Gaussiana de 100 linhas por 300 colunas.
+    2. Calcula o valor máximo da não-ortogonalidade entre quaisquer duas colunas
+       distintas dessa matriz, usando `distribuicao_do_maximo`.
+    3. Armazena esse valor máximo.
+
+    Após todas as execuções, a função calcula e retorna a média, a moda e a
+    mediana dos valores máximos observados. Opcionalmente, ela também gera e
+    salva um histograma dessa distribuição de máximos para análise visual.
 
     Args:
-        n (int): Número de execuções do teste.
+        n (int): O número de vezes que a simulação será executada (ou seja, o número de
+                 matrizes Gaussianas a serem geradas e analisadas).
+        plot (bool, optional): Se `True`, um histograma da distribuição dos valores
+                               máximos será gerado e salvo. Padrão para `True`.
+
+    Returns:
+        tuple: Uma tupla contendo três valores float:
+               - `mean` (float): A média dos valores máximos de não-ortogonalidade calculados.
+               - `moda` (float): A moda dos valores máximos de não-ortogonalidade calculados.
+                                 Nota: Para dados contínuos, a moda pode não ser única ou
+                                 ser sensível aos bins do histograma; aqui, ela retorna o
+                                 valor mais frequente exato.
+               - `mediana` (float): A mediana dos valores máximos de não-ortogonalidade calculados.
     """
     maximos = np.empty(n, dtype=float)
     for i in range(n):
@@ -253,6 +324,7 @@ def test_distribuicao_do_maximo(n, plot=True):
         hist, bin_edges = make_Histogram(maximos, bins=30)
         title = f"Histograma do Máximo da Distribuição - Execução {n}"
         plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo')
+    
     return mean, moda, mediana
 
 # =======================================
@@ -260,6 +332,24 @@ def test_distribuicao_do_maximo(n, plot=True):
 # =======================================
 
 def compute_S2(dados):
+    """
+    Calcula o estimador não enviesado da variância amostral (S²) de forma iterativa.
+
+    Esta função calcula a soma dos quadrados dos desvios de cada ponto de dado em relação à
+    média cumulativa dos dados até aquele ponto. No final, ela divide essa soma
+    pelo número de dados menos 1 (`n-1`) para obter o estimador não enviesado da variância.
+
+    Args:
+        dados (array-like): Uma lista ou array NumPy de valores numéricos.
+
+    Returns:
+        float: O valor do estimador não enviesado da variância amostral (S²).
+
+    Raises:
+        ValueError: Se a entrada `dados` tiver menos de dois elementos, pois
+                    a variância para um único ponto de dado não é definida
+                    (divisão por zero ou por `len(dados) - 1`).
+    """
     S2 = 0
     for i in range(len(dados)):
         Xbar = np.mean(dados[:i+1])
