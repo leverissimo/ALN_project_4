@@ -5,6 +5,14 @@ import seaborn as sns
 from scipy import stats
 import time
 
+import warnings
+from scipy.optimize import OptimizeWarning
+
+# Ignorar warnings específicos
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=OptimizeWarning)
+
 def generate_gaussian_matrix(M: int, N:int)->np.ndarray:
     """Cria uma matriz Gaussiana com as entradas
     seguindo uma distribuição normal com media 0 e 
@@ -34,13 +42,17 @@ def norma2_das_colunas(A):
         data.append(np.linalg.norm(A[:, i]))
     return data
 
+import scipy.stats as stats
+
 def melhor_ajuste_distribuicao(data):
-    # Distributions to test - focusing on likely candidates
+    # Lista de distribuições candidatas (incluindo Gama e Beta)
     distribuicoes = [
-        ('norm', stats.norm),
-        ('chi', stats.chi),
-        ('chi2', stats.chi2),
-        ('rayleigh', stats.rayleigh)
+        ('norm', stats.norm),      # Normal (suporte: -inf a +inf)
+        ('chi', stats.chi),        # Chi (suporte: x ≥ 0)
+        ('chi2', stats.chi2),      # Chi-quadrado (suporte: x ≥ 0)
+        ('rayleigh', stats.rayleigh),  # Rayleigh (suporte: x ≥ 0)
+        ('gamma', stats.gamma),    # Gama (suporte: x > 0)
+        ('beta', stats.beta)       # Beta (suporte: 0 ≤ x ≤ 1)
     ]
     
     melhor_p = -1
@@ -48,8 +60,15 @@ def melhor_ajuste_distribuicao(data):
     
     for nome, distrib in distribuicoes:
         try:
-            params = distrib.fit(data)
-            ks_stat, p_valor = stats.kstest(data, nome, args=params)
+            # Ajuste especial para a distribuição Beta (requer dados em [0, 1])
+            if nome == 'beta':
+                # Normaliza os dados para o intervalo [0, 1]
+                data_normalized = (data - np.min(data)) / (np.max(data) - np.min(data))
+                params = distrib.fit(data_normalized)
+                ks_stat, p_valor = stats.kstest(data_normalized, nome, args=params)
+            else:
+                params = distrib.fit(data)
+                ks_stat, p_valor = stats.kstest(data, nome, args=params)
             
             if p_valor > melhor_p:
                 melhor_p = p_valor
@@ -106,6 +125,7 @@ def plot_histogram_seaborn(data, bins=20, title='Histograma', xlabel='Valor', yl
     filename = title.lower().replace(' ', '_')
     filepath = os.path.join(folder, f"{filename}.png")
     mean = np.mean(data)
+    std = np.std(data)
     fig, ax = plt.subplots(figsize=(10, 6))
     
     
@@ -117,7 +137,8 @@ def plot_histogram_seaborn(data, bins=20, title='Histograma', xlabel='Valor', yl
     # sns.kdeplot(data, color="red
     # ", linewidth=2)
     # Títulos e eixos
-    ax.set_title(title)
+    # ax.set_title(title)
+    ax.set_title(f"{title} (σ = {std:.2f})")
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
@@ -128,62 +149,6 @@ def plot_histogram_seaborn(data, bins=20, title='Histograma', xlabel='Valor', yl
     plt.close(fig)
     print(f"Gráfico salvo em: {filepath}")
 
-
-
-
-
-# def plot_histogram_seaborn(data, *, bins=20, title='Histograma',
-#                            xlabel='Valor', ylabel='Frequência',
-#                            folder='figures/normas'):
-#     os.makedirs(folder, exist_ok=True)
-
-#     filename = title.lower().replace(' ', '_')
-#     filepath = os.path.join(folder, f"{filename}.png")
-
-#     # --- Crie UMA figura e UM eixo ----------------------------
-#     fig, ax = plt.subplots(figsize=(10, 6))
-#     sns.set_style("darkgrid")
-
-#     # Histograma (stat='density' p/ ficar na mesma escala da KDE)
-#     sns.histplot(
-#         data,
-#         bins=bins,
-#         stat='density',
-#         color='skyblue',
-#         edgecolor='black',
-#         label='Histograma',
-#         ax=ax                       # <- mesmo eixo
-#     )
-
-#     # KDE sobre o mesmo eixo, com rótulo
-#     sns.kdeplot(
-#         data,
-#         color='purple',
-#         linewidth=2,
-#         label='KDE (Densidade)',
-#         ax=ax                       # <- mesmo eixo
-#     )
-
-#     # Linhas de média ± desvio‑padrão (opcional)
-#     mean = np.mean(data)
-#     std  = np.std(data)
-#     ax.axvline(mean,        ls='--', lw=2,  color='blue',   label=f'Média: {mean:.2f}')
-#     ax.axvline(mean - std,  ls='--', lw=1.5,color='green',  label=f'-1σ: {mean - std:.2f}')
-#     ax.axvline(mean + std,  ls='--', lw=1.5,color='green',  label=f'+1σ: {mean + std:.2f}')
-#     #  • Se quiser sombrear a área ±1σ:
-#     # ax.axvspan(mean - std, mean + std, color='green', alpha=0.2, label='±1σ')
-
-#     # Títulos e eixos
-#     ax.set_title(title)
-#     ax.set_xlabel(xlabel)
-#     ax.set_ylabel(ylabel)
-
-#     # Agora o Matplotlib encontra todos os rótulos
-#     ax.legend()
-
-#     fig.savefig(filepath, bbox_inches='tight')
-#     plt.close(fig)
-#     print(f"Gráfico salvo em: {filepath}")
 
 def test_norma2_das_colunas():
 
@@ -236,11 +201,13 @@ def test_produto_interno():
 
     """
 
-    intervalos = [100, 200, 500, 1000]
+    intervalos = [100, 200, 500, 1000, 5000, 10000]
     for i in intervalos:
         A = generate_gaussian_matrix(100, i)
         resultados = produto_interno(A)
+        melhor_ajuste = melhor_ajuste_distribuicao(resultados)
         hist, bin_edges = make_Histogram(resultados, bins=30)
+        print(f"Melhor ajuste na matriz 100 X {i}: {melhor_ajuste}")
         title = f"Produto Interno das Colunas - Matriz {i}"
         # plot_histogram(hist, bin_edges, title=title, xlabel='Produto Interno', ylabel='Frequência', folder='figures/produto_interno')
         plot_histogram_seaborn(data=resultados, bins =25,xlabel='Produto Interno', title=title, ylabel='Frequência', folder='figures/produto_interno' )
@@ -275,11 +242,18 @@ def test_distribuicao_do_maximo(n, plot=True):
     for i in range(n):
         A = generate_gaussian_matrix(100, 300)
         maximos[i] = distribuicao_do_maximo(A)
+
+     #  Calculando Média
+    mean = np.mean(maximos)
+    # Calcula Moda 
+    valores, contagens = np.unique(maximos, return_counts=True)
+    moda = valores[np.argmax(contagens)]
+    mediana = np.median(maximos)
     if plot:
         hist, bin_edges = make_Histogram(maximos, bins=30)
         title = f"Histograma do Máximo da Distribuição - Execução {n}"
         plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo')
-    return maximos
+    return mean, moda, mediana
 
 # =======================================
 # ============= Question 4 ==============
@@ -407,6 +381,21 @@ def analise_K(m, n, epsilon, alpha, K_max):
 # =======================================
 # ============= Question 5 ==============
 # =======================================
+    
+    #  Calculando Média
+    mean = np.mean(maximos)
+    # Calcula Moda 
+    valores, contagens = np.unique(maximos, return_counts=True)
+    moda = valores[np.argmax(contagens)]
+    mediana = np.median(maximos)
+
+    hist, bin_edges = make_Histogram(maximos, bins=30)
+    title = f"Distribuição do Máximo de não ortogonalidade entre colunas"
+    plot_histogram_seaborn(data=maximos, title= title,  bins=25,  xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo') 
+    
+    
+    return mean, moda, mediana
+
 def test_distribuicao_do_maximo_parte_2(n):
     maximos = np.empty(n, dtype=float)
     pares_mn = [(100, 100), (100, 300), (200, 200), (200, 600), (500, 500), (500, 1500), (1000, 1000), (1000, 3000)]
@@ -425,7 +414,7 @@ if __name__ == "__main__":
     time_start = time.time()
     print("Iniciando os testes...")
     
-    # test_norma2_das_colunas(5)
+    # test_norma2_das_colunas()
     # test_produto_interno()
     
     # test_distribuicao_do_maximo(1000)
@@ -441,4 +430,13 @@ if __name__ == "__main__":
     # test_distribuicao_do_maximo_parte_2(1000)
     time_end = time.time()
     print("Teste concluído.")
-    print(f"Tempo total de execução: {time_end - time_start:.2f} segundos")
+    # print(f"Tempo total de execução: {time_end - time_start:.2f} segundos")
+    # A = generate_gaussian_matrix(10000, 1000)
+    # data = norma2_das_colunas(A)
+    # melhor_ajuste = melhor_ajuste_distribuicao(data)
+    # print(f"Melhor Ajuste (Distibuição na Matriz {10000}X{1000}: {melhor_ajuste} )")
+    # # hist, bin_edges = make_Histogram(data, bins=30)
+    # title = f"Normas 2 das Colunas - Matriz {10000}X{1000}"
+    # # plot_histogram(hist, bin_edges, title=title, xlabel='Norma 2', ylabel='Frequência')
+    # plot_histogram_seaborn(data, bins=25, title=title, xlabel='Norma 2',  ylabel='Frequência')
+    
