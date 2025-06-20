@@ -435,6 +435,51 @@ def encontrar_K_teorico(m, n, epsilon, alpha, K0=100, max_iter=1000):
     }
 
 def analise_K(m, n, epsilon, alpha, K_max):
+    """
+    Realiza uma análise comparativa entre o número de réplicas (K) teórico e real
+    necessário para estimar a esperança do máximo da não-ortogonalidade com uma
+    dada precisão e nível de confiança.
+
+    Esta função simula o processo de coleta de dados, calcula a média cumulativa
+    dos máximos da não-ortogonalidade e visualiza sua convergência em relação
+    a uma margem de erro (`epsilon`) e nível de confiança (`1-alpha`). Ela compara
+    o `K` derivado teoricamente (usando o Teorema Central do Limite - TCL) com o `K` real
+    (empírico) necessário para a média amostral se estabilizar dentro da margem de erro.
+
+    Args:
+        m (int): Número de linhas para as matrizes Gaussianas a serem geradas.
+        n (int): Número de colunas para as matrizes Gaussianas a serem geradas.
+        epsilon (float): A margem de erro desejada para a estimativa da média.
+        alpha (float): O nível de significância (probabilidade de erro tipo I)
+                       para o cálculo do K teórico. O nível de confiança é `1 - alpha`.
+        K_max (int): O número máximo de réplicas a serem simuladas para a análise real.
+
+    Returns:
+        dict: Um dicionário contendo os **resultados** da análise:
+            - 'k_values' (list): Uma lista de valores de K onde a média amostral
+                                 está dentro da tolerância de erro (`tol`).
+            - 'valor_esperado' (float): A média dos máximos calculada com base no
+                                        `K_teo` de amostras.
+            - 'K_teo' (int): O número de réplicas (K) estimado **teoricamente** (pelo TCL).
+            - 'K_real' (int or None): O número de réplicas **real/empírico** onde a média
+                                      amostral se estabiliza dentro da tolerância.
+                                      Será `None` se a média não estabilizar até `K_max`.
+            - 'limite_superior' (float): O limite superior do intervalo de confiança.
+            - 'limite_inferior' (float): O limite inferior do intervalo de confiança.
+
+    Raises:
+        ValueError: Se o K teórico calculado for maior que K_max, indicando que `K_max`
+                    é insuficiente para a precisão desejada.
+
+    Notes:
+        - A função imprime o `epsilon` e `alpha` usados no início da execução para rastreamento.
+        - Um gráfico detalhado é gerado e salvo na pasta `figures/encontrar_K/`. Este gráfico
+          mostra a convergência da média cumulativa, os limites de confiança, e marca os valores
+          de K teórico e real para fácil comparação.
+        - A "região estável" para `K_real` é definida como o menor `k` a partir do qual
+          todas as médias cumulativas subsequentes (até `K_max`) estão dentro da tolerância `tol`
+          do `valor_esperado`.
+    """
     print(f"Valor do epsilon: {epsilon}")
     print(f"Valor do alpha: {alpha}")
     #Calcula K teórico e tolerância de erro    
@@ -518,6 +563,36 @@ def analise_K(m, n, epsilon, alpha, K_max):
 
 
 def test_distribuicao_do_maximo_parte_2(n):
+    """
+    Testa e visualiza a distribuição do valor máximo de não-ortogonalidade entre colunas
+    de matrizes Gaussianas para um conjunto variado de dimensões (m x n).
+
+    Esta função executa simulações para diferentes tamanhos de matrizes, calculando
+    em cada caso o maior valor absoluto do cosseno do ângulo entre quaisquer duas
+    colunas distintas. Ela repete este processo `n` vezes para cada par de dimensões
+    e gera um histograma da distribuição desses valores máximos.
+
+    A análise é feita para os seguintes pares de dimensões (linhas, colunas):
+    - (100, 100), (100, 300)
+    - (200, 200), (200, 600)
+    - (500, 500), (500, 1500)
+    - (1000, 1000), (1000, 3000)
+
+    Para cada par (m, n) de dimensões:
+    1. Executa `n` vezes:
+        a. Gera uma nova matriz Gaussiana de dimensão `m x n`.
+        b. Calcula o valor máximo da não-ortogonalidade usando `distribuicao_do_maximo`.
+        c. Armazena este valor.
+    2. Após `n` execuções, gera e salva um histograma desses `n` valores máximos
+       em uma pasta organizada por número de execuções (`n`).
+
+    Args:
+        n (int): O número de execuções (amostras) a serem coletadas para cada par
+                 de dimensões da matriz.
+
+    Returns:
+        None: A função salva os gráficos diretamente no sistema de arquivos.
+    """
     maximos = np.empty(n, dtype=float)
     pares_mn = [(100, 100), (100, 300), (200, 200), (200, 600), (500, 500), (500, 1500), (1000, 1000), (1000, 3000)]
     for p in pares_mn:
@@ -529,39 +604,3 @@ def test_distribuicao_do_maximo_parte_2(n):
         title = f"Histograma do Máximo da Distribuição - Execução {n}, Dimensões {p[0]}X{p[1]}"
         plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder=f'figures/distribuicao_do_maximo/parte_2/valores_de_K/{n}')
         maximos = np.empty(n, dtype=float)
-
-
-if __name__ == "__main__":
-    time_start = time.time()
-    print("Iniciando os testes...")
-    
-    # test_norma2_das_colunas()
-    # test_produto_interno()
-    
-    # test_distribuicao_do_maximo(1000)
-    # k_values = np.array(encontrar_K(1000))
-    # k_value = test_encontrar_K(1000)
-    # print(f"Valor de K encontrado: {k_value}")
-    # result = encontrar_K_teorico(100, 300, epsilon=0.01, alpha=0.05)
-    # print(encontrar_K(0.001, 0.05, K_max=1000))
-    
-    epsilon_poss =[0.005, 0.004, 0.003, 0.0015] 
-    
-    for eps in epsilon_poss:
-        result = analise_K(m=100, n=300, epsilon=eps, alpha=0.05, K_max=3000)
-        print(f"Valor esperado: {result['valor_esperado']:.4f}, K Teórico: {result['K_teo']}, K Real: {result['K_real']}")
-    
-    # print(len(k_values), " valores de K encontrados.")
-    # test_distribuicao_do_maximo_parte_2(1000)
-    time_end = time.time()
-    print("Teste concluído.")
-    # print(f"Tempo total de execução: {time_end - time_start:.2f} segundos")
-    # A = generate_gaussian_matrix(10000, 1000)
-    # data = norma2_das_colunas(A)
-    # melhor_ajuste = melhor_ajuste_distribuicao(data)
-    # print(f"Melhor Ajuste (Distibuição na Matriz {10000}X{1000}: {melhor_ajuste} )")
-    # # hist, bin_edges = make_Histogram(data, bins=30)
-    # title = f"Normas 2 das Colunas - Matriz {10000}X{1000}"
-    # # plot_histogram(hist, bin_edges, title=title, xlabel='Norma 2', ylabel='Frequência')
-    # plot_histogram_seaborn(data, bins=25, title=title, xlabel='Norma 2',  ylabel='Frequência')
-    
