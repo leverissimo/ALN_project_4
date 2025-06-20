@@ -241,10 +241,20 @@ def test_distribuicao_do_maximo(n):
     for i in range(n):
         A = generate_gaussian_matrix(100, 300)
         maximos[i] = distribuicao_do_maximo(A)
+    
+    #  Calculando Média
+    mean = np.mean(maximos)
+    # Calcula Moda 
+    valores, contagens = np.unique(maximos, return_counts=True)
+    moda = valores[np.argmax(contagens)]
+    mediana = np.median(maximos)
 
     hist, bin_edges = make_Histogram(maximos, bins=30)
-    title = f"Distribuição do Máximo de não ortoonalidade entre colunas"
+    title = f"Distribuição do Máximo de não ortogonalidade entre colunas"
     plot_histogram_seaborn(data=maximos, title= title,  bins=25,  xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo') 
+    
+    
+    return mean, moda, mediana
 
 def test_distribuicao_do_maximo_parte_2(n):
     maximos = np.empty(n, dtype=float)
@@ -267,7 +277,12 @@ if __name__ == "__main__":
     # test_norma2_das_colunas()
     # test_produto_interno()
     # time_start = time.time()
-    test_distribuicao_do_maximo(1000)
+    print("Letra C")
+    media, moda, mediana =test_distribuicao_do_maximo(1000)
+    
+    print(f"Media Observada: {media}")
+    print(f"Moda observada: {moda}")
+    print(f"Mediana observada: {mediana}")
     
 
     # time_end = time.time()
