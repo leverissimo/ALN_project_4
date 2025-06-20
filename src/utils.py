@@ -19,7 +19,6 @@ def generate_gaussian_matrix(M: int, N:int)->np.ndarray:
     """
     
     matriz = np.random.normal(loc=0, scale = 1, size=(M, N))
-    
     return matriz
 
 
@@ -250,15 +249,17 @@ def test_produto_interno():
 # ============= Question 3 ==============
 # =======================================
 
-def distribuicao_do_maximo(A):
+def distribuicao_do_maximo(A, create_matrix=False, m = None, n = None):
+    if create_matrix:
+        A = generate_gaussian_matrix(m, n)
     norm = np.linalg.norm(A, axis=0)
     X = A / norm
-    B = np.abs(A @ A.T)
+    B = np.abs(X.T @ X)
     
     np.fill_diagonal(B, 0.0)
     return np.max(B)
 
-def test_distribuicao_do_maximo(n):
+def test_distribuicao_do_maximo(n, plot=True):
     """Testa a função distribuicao_do_maximo gerando matrizes Gaussianas
     e plota histogramas dos máximos calculados.
 
@@ -274,12 +275,138 @@ def test_distribuicao_do_maximo(n):
     for i in range(n):
         A = generate_gaussian_matrix(100, 300)
         maximos[i] = distribuicao_do_maximo(A)
+    if plot:
+        hist, bin_edges = make_Histogram(maximos, bins=30)
+        title = f"Histograma do Máximo da Distribuição - Execução {n}"
+        plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo')
+    return maximos
 
-    hist, bin_edges = make_Histogram(maximos, bins=30)
-    title = f"Histograma do Máximo da Distribuição - Execução {n}"
-    plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder='figures/distribuicao_do_maximo')
+# =======================================
+# ============= Question 4 ==============
+# =======================================
+
+def compute_S2(dados):
+    S2 = 0
+    for i in range(len(dados)):
+        Xbar = np.mean(dados[:i+1])
+        S2 += (dados[i] - Xbar) ** 2
+    S2 /= len(dados) - 1
+    return S2
 
 
+def encontrar_K_teorico(m, n, epsilon, alpha, K0=100, max_iter=1000):
+    z = stats.norm.ppf(1 - alpha/2)
+    K = K0
+    dados = np.array(
+        [distribuicao_do_maximo(A=None, create_matrix=True, m=m, n=n) for _ in range(K)]
+    )
+
+    for it in range(max_iter):
+        S2 = compute_S2(dados)
+        S = np.sqrt(S2)
+        K_req = int(np.ceil((z * S / epsilon)**2))  
+
+        if K_req <= K:
+            ME = z * S / np.sqrt(K)
+            if ME <= epsilon:
+                # convergiu dentro da margem desejada
+                K = K_req
+                break
+            # se ainda não convergiu, pedimos ao menos UMA réplica extra
+            K_req = K + 1
+        novas = np.array([
+            distribuicao_do_maximo(A=None, create_matrix=True, m=m, n=n)
+            for _ in range(K_req - K)
+        ])
+        dados = np.concatenate([dados, novas])
+        K = K_req
+
+    # calculamos estatísticas finais
+    Xbar = dados.mean()
+    S     = np.std(dados, ddof=1)
+    ME    = z * S / np.sqrt(K)
+
+    print(K, "é o valor de K encontrado com a tolerância de erro", ME)
+
+    return {
+        'K_final': K,
+        'Xbar':    Xbar,
+        'S':       S,
+        'ME':      ME,
+        'alpha':   alpha,
+        'epsilon': epsilon,
+        'dados':   dados
+    }
+
+def analise_K(m, n, epsilon, alpha, K_max):
+    #Calcula K teórico e tolerância de erro    
+    resultado = encontrar_K_teorico(m, n, epsilon, alpha)
+    tol = resultado['ME']
+    K_teo = resultado['K_final']
+    S = resultado['S']
+    if K_teo > K_max:
+        raise ValueError(f"K teórico ({K_teo}) é maior que K máximo permitido ({K_max}). Ajuste K_max ou os parâmetros de entrada.")
+
+    # Inicializa arrays para armazenar máximos e médias
+    maximo = np.empty(K_max, dtype=float)
+    medias = []
+    # Gera matrizes e computa máximos
+    for k in range(1, K_max + 1):
+        A = generate_gaussian_matrix(m, n)
+        maximo[k - 1] = distribuicao_do_maximo(A)
+        medias.append(np.mean(maximo[:k]))
+
+    # Calcula valor esperado e encontra K_real
+    valor_esperado = np.mean(maximo[:K_teo])
+
+    # Encontra todos os valores de K dentro da tolerância
+    k_values = [k for k in range(1, K_max + 1) 
+                if abs(medias[k - 1] - valor_esperado) < tol]
+
+    print(k_values)
+    # Determina K_real encontrando a região estável
+    K_real = None
+    for k in range(1, K_max + 1):
+        if all(abs(medias[i] - valor_esperado) < tol 
+               for i in range(k, K_max)):
+            K_real = k
+            break
+            
+    print(f"Valor de K encontrado: {K_real} (Teórico: {K_teo})")
+
+    # Calcula limites de confiança
+    limite_superior = valor_esperado + tol
+    limite_inferior = valor_esperado - tol
+
+    # Plota os resultados
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, K_max + 1), medias, label='Média dos Máximos')
+    plt.axvline(K_teo, color='red', linestyle='--', label=f'K = {K_teo}')
+    plt.axvline(K_real, color='green', linestyle='--', label=f'K Real = {K_real}')
+    plt.axhline(limite_superior, color='orange', linestyle='--', 
+                label=f'Limite Superior: {limite_superior:.4f}')
+    plt.axhline(limite_inferior, color='orange', linestyle='--', 
+                label=f'Limite Inferior: {limite_inferior:.4f}')
+    plt.xlabel('K')
+    plt.ylabel('Média dos Máximos')
+    plt.title('Média dos Máximos vs. K')
+    plt.legend()
+    plt.savefig('figures/encontrar_K/media_maximos_vs_K.png')
+    plt.close()
+
+    return {
+        'k_values': k_values,
+        'valor_esperado': valor_esperado,
+        'K_teo': K_teo,
+        'K_real': K_real,
+        'limite_superior': limite_superior,
+        'limite_inferior': limite_inferior
+    }
+
+
+# =======================================
+# ============= Question 5 ==============
+# =======================================
 def test_distribuicao_do_maximo_parte_2(n):
     maximos = np.empty(n, dtype=float)
     pares_mn = [(100, 100), (100, 300), (200, 200), (200, 600), (500, 500), (500, 1500), (1000, 1000), (1000, 3000)]
@@ -302,8 +429,16 @@ if __name__ == "__main__":
     # test_produto_interno()
     
     # test_distribuicao_do_maximo(1000)
-    test_distribuicao_do_maximo_parte_2(1000)
-
+    # k_values = np.array(encontrar_K(1000))
+    # k_value = test_encontrar_K(1000)
+    # print(f"Valor de K encontrado: {k_value}")
+    # result = encontrar_K_teorico(100, 300, epsilon=0.01, alpha=0.05)
+    # print(encontrar_K(0.001, 0.05, K_max=1000))
+    result = analise_K(m=100, n=300, epsilon=0.001, alpha=0.05, K_max=3000)
+    print(f"Valor esperado: {result['valor_esperado']:.4f}, K Teórico: {result['K_teo']}, K Real: {result['K_real']}")
+    
+    # print(len(k_values), " valores de K encontrados.")
+    # test_distribuicao_do_maximo_parte_2(1000)
     time_end = time.time()
     print("Teste concluído.")
     print(f"Tempo total de execução: {time_end - time_start:.2f} segundos")
