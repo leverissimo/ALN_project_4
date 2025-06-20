@@ -359,6 +359,38 @@ def compute_S2(dados):
 
 
 def encontrar_K_teorico(m, n, epsilon, alpha, K0=100, max_iter=1000):
+    """
+    Estima o número mínimo de réplicas (K) necessário para que a média amostral
+    da distribuição do máximo de não-ortogonalidade aproxime-se de sua esperança
+    com uma margem de erro epsilon e um nível de confiança (1-alpha) desejados.
+
+    Esta função implementa um método iterativo baseado no Teorema Central do Limite (TCL)
+    para determinar o tamanho de amostra `K`. Ele começa com um `K0` inicial, calcula
+    a variância amostral com os dados disponíveis e usa a fórmula do TCL para estimar
+    o `K` requerido. Se o `K` atual for insuficiente, mais dados são gerados até que a
+    margem de erro desejada seja atingida ou o número máximo de iterações seja alcançado.
+
+    Args:
+        m (int): Número de linhas para as matrizes Gaussianas a serem geradas.
+        n (int): Número de colunas para as matrizes Gaussianas a serem geradas.
+        epsilon (float): A margem de erro máxima permitida (semi-largura do intervalo de confiança).
+        alpha (float): O nível de significância (probabilidade de erro tipo I). O nível de
+                       confiança é 1 - alpha.
+        K0 (int, optional): Número inicial de réplicas a serem geradas. Padrão para 100.
+        max_iter (int, optional): Número máximo de iterações para o processo de ajuste de K.
+                                  Padrão para 1000.
+
+    Returns:
+        dict: Um dicionário contendo os resultados da análise:
+            - 'K_final' (int): O número final de réplicas determinado para satisfazer a precisão.
+            - 'Xbar' (float): A média amostral dos valores do máximo da não-ortogonalidade.
+            - 'S' (float): O desvio padrão amostral dos valores do máximo da não-ortogonalidade.
+            - 'ME' (float): A margem de erro final obtida para o 'K_final'.
+            - 'alpha' (float): O nível de significância usado.
+            - 'epsilon' (float): A margem de erro desejada.
+            - 'dados' (np.ndarray): Um array NumPy contendo todos os valores do máximo da
+                                    não-ortogonalidade gerados durante o processo.
+    """
     z = stats.norm.ppf(1 - alpha/2)
     K = K0
     dados = np.array(
@@ -447,7 +479,6 @@ def analise_K(m, n, epsilon, alpha, K_max):
     # Plota os resultados
     plt.figure(figsize=(10, 6))
     plt.plot(range(1, K_max + 1), medias, label='Média dos Máximos', color='#1f77b4', linewidth=2)
-    # plt.plot([], [], ' ', label=f'Epsilon ($\epsilon$) = {epsilon:.4f}') # Adiciona uma entrada vazia na legenda
 
 
     plt.axhline(limite_superior, color='darkorange', linestyle='--', linewidth=2,
@@ -457,9 +488,6 @@ def analise_K(m, n, epsilon, alpha, K_max):
     
     plt.axvline(K_teo, color='firebrick', linestyle='--', linewidth=2, label=f'K Teórico = {K_teo}')
     plt.axvline(K_real, color='darkgreen', linestyle='--', linewidth=2, label=f'K Real = {K_real}')
-    # if K_real is not None:
-    #     plt.axvspan(K_real, K_max, color='green', alpha=0.1, label='Região de Convergência Estável')
-
   
     plt.xlabel('K (Número de Simulações)', fontsize=14)
     plt.ylabel('Média dos Máximos', fontsize=14)

@@ -4,15 +4,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
 import time
-import src.utils as utils
+from src.utils import *
 import warnings
 from scipy.optimize import OptimizeWarning
 
-# Seu código das funções aqui (copy/paste de tudo que você enviou)
-# Para não deixar repetido aqui, vou assumir que você importou as funções do seu módulo,
-# mas caso queira, posso inserir tudo no mesmo arquivo.
-
-# Vou montar o menu interativo para você.
 
 def main():
     warnings.filterwarnings("ignore", category=RuntimeWarning)
