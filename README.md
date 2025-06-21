@@ -7,5 +7,5 @@
 
 - [Código Fonte](./src/)
 - [Enunciado](./enunciado.pdf)
-- [Relatório](
+- [Relatório](./docs/Relatorio.pdf)
 
