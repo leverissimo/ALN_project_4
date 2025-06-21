@@ -560,46 +560,60 @@ def analise_K(m, n, epsilon, alpha, K_max):
 # ============= Question 5 ==============
 # =======================================
 
-
-def test_distribuicao_do_maximo_parte_2(n):
+def find_K():
     """
-    Testa e visualiza a distribuição do valor máximo de não-ortogonalidade entre colunas
-    de matrizes Gaussianas para um conjunto variado de dimensões (m x n).
+    Executa a análise de estabilização da média dos máximos de não-ortogonalidade
+    entre colunas de matrizes Gaussianas para diferentes pares de dimensões (m x n)
+    e retorna uma lista com os resultados.
 
-    Esta função executa simulações para diferentes tamanhos de matrizes, calculando
-    em cada caso o maior valor absoluto do cosseno do ângulo entre quaisquer duas
-    colunas distintas. Ela repete este processo `n` vezes para cada par de dimensões
-    e gera um histograma da distribuição desses valores máximos.
+    A lista de resultados contém os seguintes elementos:
+    - m (int): O número de linhas das matrizes geradas.
+    - n (int): O número de colunas das matrizes geradas.
+    - K_teo (int): O valor teórico de K encontrado.
+    - K_real (int): O valor real de K encontrado.
 
-    A análise é feita para os seguintes pares de dimensões (linhas, colunas):
-    - (100, 100), (100, 300)
-    - (200, 200), (200, 600)
-    - (500, 500), (500, 1500)
-    - (1000, 1000), (1000, 3000)
-
-    Para cada par (m, n) de dimensões:
-    1. Executa `n` vezes:
-        a. Gera uma nova matriz Gaussiana de dimensão `m x n`.
-        b. Calcula o valor máximo da não-ortogonalidade usando `distribuicao_do_maximo`.
-        c. Armazena este valor.
-    2. Após `n` execuções, gera e salva um histograma desses `n` valores máximos
-       em uma pasta organizada por número de execuções (`n`).
-
-    Args:
-        n (int): O número de execuções (amostras) a serem coletadas para cada par
-                 de dimensões da matriz.
+    A análise é executada com epsilon=0.0015 e alpha=0.05.
 
     Returns:
-        None: A função salva os gráficos diretamente no sistema de arquivos.
+        list: Uma lista com os resultados da análise para cada par de dimensões.
     """
-    maximos = np.empty(n, dtype=float)
     pares_mn = [(100, 100), (100, 300), (200, 200), (200, 600), (500, 500), (500, 1500), (1000, 1000), (1000, 3000)]
-    for p in pares_mn:
-        for i in range(n):
-            A = generate_gaussian_matrix(p[0], p[1])
-            maximos[i] = distribuicao_do_maximo(A)
+    values_K = []
+    for m, n in pares_mn:
+        result = analise_K(m, n, epsilon=0.0015, alpha=0.05, K_max=2000)
+        values_K.append((m, n, result['K_teo'], result['K_real']))
+    return values_K
 
-        hist, bin_edges = make_Histogram(maximos, bins=30)
-        title = f"Histograma do Máximo da Distribuição - Execução {n}, Dimensões {p[0]}X{p[1]}"
-        plot_histogram(hist, bin_edges, title=title, xlabel='Máximo', ylabel='Frequência', folder=f'figures/distribuicao_do_maximo/parte_2/valores_de_K/{n}')
-        maximos = np.empty(n, dtype=float)
+def test_distribuicao_do_maximo_parte_2_com_Ks(values_K, bins=30):
+    
+    """
+    Plota histogramas da distribuição do máximo de não-ortogonalidade
+    para diferentes pares de dimensões (m x n) e valores de K (teórico e real)
+    encontrados na análise de estabilização da média dos máximos.
+
+    Args:
+        values_K (list): Uma lista com os pares (m, n, K_teo), onde m e n são
+                        as dimensões das matrizes geradas e K_teo é o valor
+                        teórico de K encontrado na análise.
+        bins (int, optional): O número de bins para o histograma. Padrão para 30.
+
+    """
+    for m, n, K_teo in values_K:
+        for label, K in [("teorico", K_teo)]:
+            # alocar vetor para armazenar os máximos
+            maximos = np.empty(K, dtype=float)
+            for i in range(K):
+                A = generate_gaussian_matrix(m, n)
+                maximos[i] = distribuicao_do_maximo(A)
+
+            # construir histograma
+            hist, bin_edges = make_Histogram(maximos, bins=bins)
+            # seaborn
+            plot_histogram_seaborn(
+                data=maximos,
+                bins=bins,
+                title=f"Histograma do Máximo – {label.title()} (K={K}), Dimensões {m}×{n}",
+                xlabel="Máximo",
+                ylabel="Frequência",
+                folder=f"figures/distribuicao_do_maximo/parte_2/m_{m}_n_{n}/{label}/K_{K}"
+            )
